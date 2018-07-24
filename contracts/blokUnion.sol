@@ -58,6 +58,32 @@ contract blokUnion {
   event LoanRepaid(address borrower);
 
   ///FUNCTIONS
+  ///@notice deposit ether into the blokUnion
+  ///@return the user's balance
+  function deposit() public payable returns(uint){
+    demandAccounts[msg.sender] += msg.value;
 
-  
+    emit Deposit(msg.sender, msg.value);
+
+    return demandAccounts[msg.sender];
+  }
+
+  ///@notice withdraw ether from the blokUnion
+  ///@param withdrawAmount amount you want to withdraw
+  ///@return the user's remaining balance
+  function withdraw(uint withdrawAmount) public returns (unit){
+    //make sure there is enough money in the account
+    require(demandAccounts[msg.sender]) >= withdrawAmount);
+
+    //remove the money from their balance
+    demandAccounts[msg.sender] -= withdrawAmount;
+
+    //pay out the ether
+    msg.sender.transfer(withdrawAmount);
+
+    emit Withdrawl(msg.sender, withdrawAmount);
+
+    return demandAccounts[msg.sender];
+  }
+
 }
