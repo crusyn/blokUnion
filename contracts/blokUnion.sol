@@ -99,7 +99,7 @@ contract blokUnion {
     require(loans[msg.sender].loanAmount == 0);
 
     //add the loan to the list, set status to Requested
-    Loan memory loan = Loan({
+    loans[msg.sender] = Loan({
       borrower: msg.sender,
       loanAmount: _amount,
       purpose: _purpose,
@@ -111,23 +111,23 @@ contract blokUnion {
       apr: 0
       });
 
-    loans[msg.sender] = loan;
+    //loans[msg.sender] = loan;
 
     //let the world know that a loan was requested.
-    emit LoanRequest(loan.borrower, loan.loanAmount, loan.purpose);
+    emit LoanRequest(loans[msg.sender].borrower, loans[msg.sender].loanAmount, loans[msg.sender].purpose);
   }
 
   //TODO: implement security: only a loan owner or approver can get loans
   function getLoan(address _address) public view returns(
-    address,
-    uint,
-    string,
-    LoanStatus,
-    address,
-    uint,
-    uint,
-    uint,
-    uint
+    address borrower,
+    uint loanAmount,
+    string purpose,
+    LoanStatus status,
+    address approver,
+    uint balance,
+    uint issueDate,
+    uint maturityDate,
+    uint apr
     )
   {
     Loan storage loan = loans[_address];

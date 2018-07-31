@@ -91,17 +91,20 @@ contract('blockUnion', function(accounts){
         borrower: alice,
         loanAmount: loanRequestAmount,
         purpose: loanPurpose,
-        status: 2 //LoanStatus.Requested
+        status: 1 //LoanStatus.Requested
       };
 
-    assert.equal(expectedLoan.borrower, checkedLoan.borrower,
-      "Loan account property borrower not correct, check LoanRequest method");
-    assert.equal(expectedLoan.loanAmount, expectedLoan.loanAmount,
-      "Loan account property loanAmount not correct, check LoanRequest method");
-    assert.equal(expectedLoan.purpose, expectedLoan.purpose,
-      "Loan account property purpose not correct, check LoanRequest method");
-    assert.equal(expectedLoan.status, expectedLoan.status,
-      "Loan account property status not correct, check LoanRequest method");
+      //console.log(expectedLoan.borrower);
+
+      //console.log(checkedLoan);
+    assert.equal(expectedLoan.borrower, checkedLoan[0],
+      "Loan account property borrower not correct, check requestLoan method");
+    assert.equal(expectedLoan.loanAmount.toNumber(), checkedLoan[1].toNumber(),
+      "Loan account property loanAmount not correct, check requestLoan method");
+    assert.equal(expectedLoan.purpose, checkedLoan[2],
+      "Loan account property purpose not correct, check requestLoan method");
+    assert.equal(expectedLoan.status, checkedLoan[3].toNumber(),
+      "Loan account property status not correct, check requestLoan method");
 
     //Check that the event was emitted.
     const LoanRequest = await bank.LoanRequest();
@@ -113,15 +116,15 @@ contract('blockUnion', function(accounts){
     const expectedEventResult =
       {borrower: alice, loanAmount: loanRequestAmount, purpose: loanPurpose};
 
-    const logBorrower = log.args.account;
+    const logBorrower = log.args.requestor;
     const logAmount = log.args.loanAmount.toNumber();
-    const logPurpose = log.args.loanPurpose;
+    const logPurpose = log.args.purpose;
 
     assert.equal(expectedEventResult.borrower, logBorrower,
-      "LoanRequest event account property not emmitted, check LoanRequest method");
+      "LoanRequest event borrower property not emmitted, check LoanRequest method");
     assert.equal(expectedEventResult.loanAmount, logAmount,
-      "LoanRequest event amount property not emmitted, check LoanRequest method");
+      "LoanRequest event loanAmount property not emmitted, check LoanRequest method");
     assert.equal(expectedEventResult.purpose, logPurpose,
-      "LoanRequest event amount property not emmitted, check LoanRequest method");
+      "LoanRequest event purpose property not emmitted, check LoanRequest method");
   });
 });
