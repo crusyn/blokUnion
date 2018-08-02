@@ -12,8 +12,11 @@ contract blokUnion {
   ///@notice loans are where we store our loans, duh.
   mapping (address => Loan) private loans;
 
+  ///@notice contract owner
+  address owner;
+
   ///@notice loanApprovers are authorized to approve and decline loan requests.
-  address[] loanApprovers;
+  mapping (address => bool) private loanApprovers;
 
   struct Loan {
     address borrower;
@@ -50,13 +53,32 @@ contract blokUnion {
 
   event LoanRequest(address requestor, uint loanAmount, string purpose);
 
-  event LoanIssued(address borrower, address approver, uint maturityDate);
+  event LoanIssued(address borrower, address approver, uint maturityDate, string message);
 
   event LoanDeclined(address borrower, address approver, string reason);
 
   event LoanPayment(address borrower, uint amount);
 
   event LoanRepaid(address borrower);
+
+  event ApproverElected(address approver);
+
+  ///MODIFIERS
+
+  modifier onlyOwner() {
+      require (msg.sender == owner);
+      _;
+    }
+
+  modifier onlyApprover() {
+      require (loanApprovers[msg.sender] == true);
+      _;
+    }
+
+  ///CONSTRUCTOR
+  constructor() public{
+    owner = msg.sender;
+  }
 
   ///FUNCTIONS
   ///@notice deposit ether into the blokUnion
@@ -65,6 +87,8 @@ contract blokUnion {
     demandAccounts[msg.sender] += msg.value;
 
     emit DemandDeposit(msg.sender, msg.value);
+
+    totalDeposits += msg.value;
 
     return demandAccounts[msg.sender];
   }
@@ -81,6 +105,8 @@ contract blokUnion {
 
     //pay out the ether
     msg.sender.transfer(_withdrawAmount);
+
+    totalDeposits -= _withdrawAmount;
 
     emit DemandWithdrawl(msg.sender, _withdrawAmount);
 
@@ -142,5 +168,50 @@ contract blokUnion {
       loan.maturityDate,
       loan.apr
       );
+  }
+
+  ///@notice elect someone that can approve loans, only the owner can elect an
+  ///approver
+  ///@param _approver address of the person to be elected
+  function electApprover(address _approver) public onlyOwner{
+    loanApprovers[_approver] = true;
+
+    emit ApproverElected(_approver);
+  }
+
+  ///@notice approve a loan, only an approver can approve a loan.
+  ///@param _borrower the borrower you wish to approve.
+  ///@param _rate the rate you assign to the borrower for his/her loan.
+  function approveLoan(address _borrower, uint _rate) public{
+    //test only REMOVE
+    emit LoanIssued(_borrower, 0, 0, 'function body entered');
+    Loan storage loan = loans[_borrower];
+
+    //test only REMOVE
+    emit LoanIssued(_borrower, 0, 0, 'loan pulled from storage');
+    //make sure totalOutstandingLoans is never be greater than one half of totalDeposits.
+    require(totalOutstandingLoans + loan.loanAmount < totalDeposits / 2);
+
+    //test only REMOVE
+    emit LoanIssued(_borrower, 0, 0, 'meets bank requirements');
+
+    //update loan
+    loan.approver = msg.sender;
+    loan.balance = loan.loanAmount;
+    loan.issueDate = block.timestamp;
+    loan.maturityDate = block.timestamp + 60*60*24*365;//in seconds since unix epoch;
+    loan.apr = _rate;
+
+    emit LoanIssued(_borrower, loan.approver, loan.maturityDate, 'loan info updated');
+
+    //add to totalOutstandingLoans
+    totalOutstandingLoans += loan.loanAmount;
+
+    //deposit value into borrower's account
+    //this is the magic of a bank.  We are creating money from nothing!!
+    //note... because of fractional reserve banking we can now have more deposits
+    // than ETH in the bank.
+    demandAccounts[_borrower] += loan.loanAmount;
+
   }
 }
