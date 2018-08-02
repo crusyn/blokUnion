@@ -148,7 +148,7 @@ contract('blockUnion', function(accounts){
     //check borrower's demand account before the loan
     const alicesBeforeBalance = await bank.getDemandBalance({from: alice});
 
-
+    console.log(alicesBeforeBalance);
     //add clyde as an approver
       await bank.electApprover(clyde, {from: creator});
     //approve a loan as clyde
