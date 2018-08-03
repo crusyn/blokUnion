@@ -53,7 +53,7 @@ contract blokUnion {
 
   event LoanRequest(address requestor, uint loanAmount, string purpose);
 
-  event LoanIssued(address borrower, address approver, uint maturityDate, string message);
+  event LoanIssued(address borrower, address approver, uint maturityDate);
 
   event LoanDeclined(address borrower, address approver, string reason);
 
@@ -62,6 +62,9 @@ contract blokUnion {
   event LoanRepaid(address borrower);
 
   event ApproverElected(address approver);
+
+  //TODO remove
+  event DebugEvent(address add, address add2, uint a, uint b, bool bo, string c);
 
   ///MODIFIERS
 
@@ -72,6 +75,7 @@ contract blokUnion {
 
   modifier onlyApprover() {
       require (loanApprovers[msg.sender] == true);
+      //emit DebugEvent(msg.sender, 0, 0, 0, loanApprovers[msg.sender], 'approver status');
       _;
     }
 
@@ -182,27 +186,22 @@ contract blokUnion {
   ///@notice approve a loan, only an approver can approve a loan.
   ///@param _borrower the borrower you wish to approve.
   ///@param _rate the rate you assign to the borrower for his/her loan.
-  function approveLoan(address _borrower, uint _rate) public{
-    //test only REMOVE
-    emit LoanIssued(_borrower, 0, 0, 'function body entered');
+  function approveLoan(address _borrower, uint _rate) public onlyApprover{
     Loan storage loan = loans[_borrower];
 
-    //test only REMOVE
-    emit LoanIssued(_borrower, 0, 0, 'loan pulled from storage');
     //make sure totalOutstandingLoans is never be greater than one half of totalDeposits.
-    require(totalOutstandingLoans + loan.loanAmount < totalDeposits / 2);
-
-    //test only REMOVE
-    emit LoanIssued(_borrower, 0, 0, 'meets bank requirements');
+    require(totalOutstandingLoans + loan.loanAmount <= totalDeposits / 2);
 
     //update loan
+    loan.status = LoanStatus.Issued;
     loan.approver = msg.sender;
     loan.balance = loan.loanAmount;
     loan.issueDate = block.timestamp;
     loan.maturityDate = block.timestamp + 60*60*24*365;//in seconds since unix epoch;
     loan.apr = _rate;
 
-    emit LoanIssued(_borrower, loan.approver, loan.maturityDate, 'loan info updated');
+
+    emit LoanIssued(_borrower, loan.approver, loan.maturityDate);
 
     //add to totalOutstandingLoans
     totalOutstandingLoans += loan.loanAmount;

@@ -1,13 +1,13 @@
 var blockUnion = artifacts.require("./blokUnion.sol");
 var {assertRevert} = require("./helpers/assertRevert");
 
-contract('blockUnion', function(accounts){
+contract('blokUnion', function(accounts){
   const creator = accounts[0];
   const alice = accounts[1];
   const bob = accounts[2];
   const clyde = accounts[3]; //clide will be an approver
 
-  const loanRequestAmount = web3.toBigNumber(100);
+  const loanRequestAmount = web3.toBigNumber(10);
   const loanPurpose = 'I would like to purchase a pretty lollipop';
 
   const rate = (5/100)*1000000; //ppm
@@ -143,12 +143,15 @@ contract('blockUnion', function(accounts){
   })
 
   it("loan can be approved and issued", async() => {
+
     const bank = await blockUnion.deployed();
 
     //check borrower's demand account before the loan
     const alicesBeforeBalance = await bank.getDemandBalance({from: alice});
 
-    console.log(alicesBeforeBalance);
+    //let's deposit some more money in the bank before we issue the loan
+    await bank.deposit({from: bob, value: 50});
+
     //add clyde as an approver
       await bank.electApprover(clyde, {from: creator});
     //approve a loan as clyde
@@ -170,9 +173,6 @@ contract('blockUnion', function(accounts){
         apr: rate
       };
 
-      //console.log(expectedLoan.borrower);
-
-      //console.log(checkedLoan);
     assert.equal(expectedLoan.borrower, checkedLoan[0],
       "Loan account property borrower not correct, check approveLoan method");
     assert.equal(expectedLoan.loanAmount.toNumber(), checkedLoan[1].toNumber(),
@@ -211,13 +211,11 @@ contract('blockUnion', function(accounts){
       "LoanRequest event borrower property not emmitted, check LoanRequest method");
     assert.equal(expectedEventResult.approver, logApprover,
       "LoanRequest event approver property not emmitted, check LoanRequest method");
-    assert.equal(expectedEventResult.purpose, logMaturityDate,
-      "LoanRequest event purpose property not emmitted, check LoanRequest method");
 
     //loan amount is deposited into account
-    const alicesAfterBalance = await bank.getDemandBalance({from: alice}).toNumber();
+    const alicesAfterBalance = await bank.getDemandBalance({from: alice});
 
-    const expectedBalance = alicesBeforeBalance + loanRequestAmount;
+    const expectedBalance = alicesBeforeBalance.toNumber() + loanRequestAmount.toNumber();
 
     assert.equal(expectedBalance, alicesAfterBalance,
       "Demand Account Balance not updated with loan value, check approveLoan method");
@@ -227,7 +225,18 @@ contract('blockUnion', function(accounts){
   it("loan can only be approved by an approver", async() => {
     const bank = await blockUnion.deployed();
     //approve a loan as bob, should fail
-      assertRevert(bank.approveLoan(alice, rate, {from: bob}));
+
+    await bank.electApprover(clyde, {from: creator});
+    await assertRevert(bank.approveLoan(alice, rate, {from: bob}));
+
+  })
+
+  it("cannot issue a loan more than total deposits", async() => {
+    const bank = await blockUnion.deployed();
+    //approve a loan as bob, should fail
+    await bank.requestLoan(5000, 'fancy house', {from: bob});
+    await bank.electApprover(clyde, {from: creator});
+    await assertRevert(bank.approveLoan(bob, rate, {from: clyde}));
 
   })
 
