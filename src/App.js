@@ -56,7 +56,7 @@ class App extends Component {
           return this.setState({ storageValue: result.c[0] })
         })
       })
-  */
+*/
     }
 
   render() {
