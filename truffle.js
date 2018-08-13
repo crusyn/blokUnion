@@ -13,6 +13,7 @@
  */
 
 module.exports = {
+  build: require("./build"),
   networks: {
     development: {
       host: "localhost",
@@ -20,4 +21,5 @@ module.exports = {
       network_id: "*" // Match any network id
     }
   }
+
 };

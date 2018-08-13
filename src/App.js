@@ -1,17 +1,20 @@
 import React, { Component } from 'react';
+//import Button from 'bootstrap';
 import logo from './blokUnionNapkinLogo.png';
-import blokUnionContract from '../build/contracts/blokUnion.json'
+import blokUnionContract from './contracts/blokUnion.json'
 import getWeb3 from './utils/getWeb3'
 import './App.css';
 
 class App extends Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       storageValue: 0,
       web3: null
     }
+
+    this.deposit = this.deposit.bind(this);
   }
 
   componentWillMount() {
@@ -33,13 +36,8 @@ class App extends Component {
   }
 
   instantiateContract() {
-      //TODO: I'm guessing I'll need to install truffle contract
-      const contract = require('truffle-contract')
-      const blokUnion = contract(blokUnionContract)
-      blokUnion.setProvider(this.state.web3.currentProvider)
 
-      // Declaring this for later so we can chain functions on SimpleStorage.
-      var blokUnionInstance
+
 /*
       // Get accounts.
       this.state.web3.eth.getAccounts((error, accounts) => {
@@ -59,6 +57,32 @@ class App extends Component {
 */
     }
 
+    deposit(){
+      const contract = require('truffle-contract')
+      const blokUnion = contract(blokUnionContract)
+      blokUnion.setProvider(this.state.web3.currentProvider)
+
+      console.log("button clicked");
+
+      var blokUnionInstance
+
+      this.state.web3.eth.getAccounts((error, accounts) => {
+        blokUnion.deployed().then((instance) => {
+          blokUnionInstance = instance
+        }).then((result) => {
+          blokUnionInstance.deposit({from: accounts[0], value: 5})
+        }).then((result) => {
+            blokUnionInstance.DemandDeposit()
+        }).then((result) => {
+          new Promise(function(resolve, reject) {
+              result.watch(function(error, log){ resolve(log);});
+            }).then((result) => {
+              console.log(result);
+          })
+        })
+      })
+    }
+
   render() {
     return (
       <div className="App">
@@ -69,6 +93,7 @@ class App extends Component {
         <p className="App-intro">
           blokUnion is a decentralized credit union framework.  For now this is just an experiment by <a href="http://www.crusyn.com">@crusyn</a>.  At this time this will only work with a local version of the <a href="https://github.com/crusyn/blokUnion">blokUnion contract</a> running.
         </p>
+        <div><button onClick={this.deposit}>Deposit</button></div>
       </div>
     );
   }
