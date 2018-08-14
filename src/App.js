@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-//import Button from 'bootstrap';
+import { Button } from 'react-bootstrap';
 import logo from './blokUnionNapkinLogo.png';
-import blokUnionContract from './contracts/blokUnion.json'
-import getWeb3 from './utils/getWeb3'
+import blokUnionContract from './contracts/blokUnion.json';
+import getWeb3 from './utils/getWeb3';
 import './App.css';
 
 class App extends Component {
@@ -10,11 +10,16 @@ class App extends Component {
     super(props);
 
     this.state = {
-      storageValue: 0,
-      web3: null
+      web3: null,
+      balance: 0,
+      depositAmount: 5,
+      withdrawlAmount: 5
     }
 
     this.deposit = this.deposit.bind(this);
+    this.withdraw = this.withdraw.bind(this);
+    this.handleChangeDeposit = this.handleChangeDeposit.bind(this);
+    this.handleChangeWithdraw = this.handleChangeWithdraw.bind(this);
   }
 
   componentWillMount() {
@@ -24,15 +29,54 @@ class App extends Component {
     getWeb3
     .then(results => {
       this.setState({
-        web3: results.web3
+        web3: results.web3,
       })
 
       // Instantiate contract once web3 provided.
-      this.instantiateContract()
+      this.instantiateContract();
+      this.refreshBalance();
     })
     .catch(() => {
-      console.log('Error finding web3.')
+      console.log('Error finding web3.');
     })
+    this.interval = setInterval(() => this.refreshBalance(), 5000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval);
+  }
+
+  handleChangeDeposit(event) {
+    this.setState({depositAmount: event.target.value});
+  }
+
+  handleChangeWithdraw(event) {
+    this.setState({withdrawlAmount: event.target.value});
+  }
+
+  refreshBalance(){
+    const contract = require('truffle-contract');
+    const blokUnion = contract(blokUnionContract);
+    blokUnion.setProvider(this.state.web3.currentProvider)
+
+    console.log("balance refreshed");
+
+    var blokUnionInstance;
+
+    var account;
+
+    var demandDepositLogs;
+
+    this.state.web3.eth.getAccounts((error, accounts) => {
+      account = accounts[0];
+      blokUnion.deployed().then((instance) => {
+        blokUnionInstance = instance;
+      }).then((result) => {
+        return blokUnionInstance.getDemandBalance({from: account});
+      }).then((result) => {
+        this.setState({balance: this.state.web3.fromWei(result.toNumber())});
+      })
+    });
   }
 
   instantiateContract() {
@@ -58,26 +102,66 @@ class App extends Component {
     }
 
     deposit(){
-      const contract = require('truffle-contract')
-      const blokUnion = contract(blokUnionContract)
-      blokUnion.setProvider(this.state.web3.currentProvider)
+      const contract = require('truffle-contract');
+      const blokUnion = contract(blokUnionContract);
+      blokUnion.setProvider(this.state.web3.currentProvider);
 
-      console.log("button clicked");
+      console.log("deposit button clicked");
 
-      var blokUnionInstance
+      var blokUnionInstance;
+
+      var account;
+
+      var demandDepositLogs;
 
       this.state.web3.eth.getAccounts((error, accounts) => {
+        account = accounts[0];
         blokUnion.deployed().then((instance) => {
-          blokUnionInstance = instance
+          blokUnionInstance = instance;
         }).then((result) => {
-          blokUnionInstance.deposit({from: accounts[0], value: 5})
+          demandDepositLogs = blokUnionInstance.DemandDeposit();
         }).then((result) => {
-            blokUnionInstance.DemandDeposit()
+          var depositAmount = this.state.web3.toWei(this.state.depositAmount);
+          return blokUnionInstance.deposit({from: account, value: depositAmount})
         }).then((result) => {
-          new Promise(function(resolve, reject) {
-              result.watch(function(error, log){ resolve(log);});
-            }).then((result) => {
-              console.log(result);
+          return new Promise(function(resolve, reject) {
+              demandDepositLogs.watch(function(error, log){ resolve(log);});
+        }).then((result) => {
+            this.refreshBalance();
+            console.log(result);
+          })
+        })
+      })
+    }
+
+    withdraw(withdrawlAmount){
+      const contract = require('truffle-contract');
+      const blokUnion = contract(blokUnionContract);
+      blokUnion.setProvider(this.state.web3.currentProvider);
+
+      console.log("withdraw button clicked");
+
+      var blokUnionInstance;
+
+      var account;
+
+      var demandWithdrawlLogs;
+
+      this.state.web3.eth.getAccounts((error, accounts) => {
+        account = accounts[0];
+        blokUnion.deployed().then((instance) => {
+          blokUnionInstance = instance;
+        }).then((result) => {
+          demandWithdrawlLogs = blokUnionInstance.DemandWithdrawl();
+        }).then((result) => {
+          var withdrawlAmount = this.state.web3.toWei(this.state.withdrawlAmount);
+          return blokUnionInstance.withdraw(withdrawlAmount, {from: account})
+        }).then((result) => {
+          return new Promise(function(resolve, reject) {
+              demandWithdrawlLogs.watch(function(error, log){ resolve(log);});
+        }).then((result) => {
+            this.refreshBalance();
+            console.log(result);
           })
         })
       })
@@ -93,9 +177,21 @@ class App extends Component {
         <p className="App-intro">
           blokUnion is a decentralized credit union framework.  For now this is just an experiment by <a href="http://www.crusyn.com">@crusyn</a>.  At this time this will only work with a local version of the <a href="https://github.com/crusyn/blokUnion">blokUnion contract</a> running.
         </p>
-        <div><button onClick={this.deposit}>Deposit</button></div>
+        <div>
+        <h1>Balance</h1>
+        <label>Balance: {this.state.balance} ETH</label><br/><br/>
+        <label>Note: this is your confirmed balance.  You may have to wait a 10 seconds or so before your transactions confirm.</label>
+        <h1>Deposit</h1>
+        <label>Amount: <input type="text" name = "depositAmount" value={this.state.depositAmount} onChange={this.handleChangeDeposit}/> ETH </label>
+        <Button bsStyle="primary" onClick={this.deposit}>Deposit</Button>
+        <h1>Withdraw</h1>
+        <label>Amount: <input type="text" name = "depositAmount" value={this.state.withdrawlAmount} onChange={this.handleChangeWithdraw}/> ETH </label>
+        <Button bsStyle="primary" onClick={this.withdraw}>Withdraw</Button>
+        </div>
       </div>
     );
+    //TODO: the Button doesn't look good because I would need to import bootstrap.css and I didn't have time to get that into webpack. https://react-bootstrap.github.io/getting-started/introduction/
+
   }
 }
 
