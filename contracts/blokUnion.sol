@@ -109,7 +109,7 @@ contract blokUnion {
   ///@notice closes the blokUnion and sends all ETH to owner
   ///@dev only the contract owner can exec
   //TODO: need to write tests for this
-  function kill() onlyOwner{
+  function kill() onlyOwner public{
     selfdestruct(owner);
   }
 

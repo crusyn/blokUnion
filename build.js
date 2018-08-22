@@ -3,8 +3,8 @@ const path = require("path");
 
 module.exports = function(options, callback) {
   const artifactsDir = options.contracts_build_directory;
-  const outputDir = path.join(options.working_directory, "lib");
-  const outputIndexPath = path.join(outputDir, "index.js");
+  const outputDir = path.join(options.working_directory, "src/contracts/");
+  //const outputIndexPath = path.join(outputDir, "index.js");
 
   const files = fs.readdirSync(artifactsDir);
 
@@ -12,6 +12,11 @@ module.exports = function(options, callback) {
     fs.mkdirSync(outputDir);
   }
 
+
+  files.forEach(fileName =>
+    fs.createReadStream(path.join(artifactsDir , file.fileName)).pipe(fs.createWriteStream(path.join(outputDir , file.fileName)))
+  );
+/**
   fs.writeFileSync(outputIndexPath, "module.exports = {\n");
 
   files.filter(fileName => fileName.indexOf(".json") >= 0).forEach(fileName => {
@@ -26,4 +31,5 @@ module.exports = function(options, callback) {
   });
 
   fs.appendFileSync(outputIndexPath, "};");
+  **/
 };
