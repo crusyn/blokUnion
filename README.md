@@ -23,7 +23,7 @@ Our contract implements a state machine.  Loans follow the following lifecycle:
 We love requires... They be erwere.
 
 ### restricting access
-We are careful to restrict access to any variable that is not needed for view by outside users/contracts.  The *demandAccounts*, *loan*, *loanApprovers* are all private state variables.
+We are careful to restrict access to any variable that is not needed for view by outside users/contracts.  The `demandAccounts`, `loan`, `loanApprovers` are all private state variables.
 
 ### speed bump
 It would probably be good to add a speed bumb, but that is in the backlog :)
@@ -40,7 +40,7 @@ We checked and our contract doesn't seem to be vulnerable to race condition atta
 We protected against overflow and underflow by requiring that the expected balance will be greater than the current balance in the case of deposits and less than in the case of withdrawls.
 
 ## comments
-Check out our sweet comments in our [contracts/blokUnion.sol](https://github.com/crusyn/blokUnion/blob/master/contracts/blokUnion.sol) file for more details on functionality
+Check out our sweet solidity style comments in our [contracts/blokUnion.sol](https://github.com/crusyn/blokUnion/blob/master/contracts/blokUnion.sol) file for more details on functionality
 
 ## feedback
 We would love your feedback!  Please submit issues and pull requests in [github](https://github.com/crusyn/blokUnion)!!
