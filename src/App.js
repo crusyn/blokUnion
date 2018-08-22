@@ -12,6 +12,7 @@ class App extends Component {
     this.state = {
       web3: null,
       balance: 0,
+      currentAccount: "",
       depositAmount: 5,
       withdrawlAmount: 5
     }
@@ -69,6 +70,7 @@ class App extends Component {
 
     this.state.web3.eth.getAccounts((error, accounts) => {
       account = accounts[0];
+      this.setState({currentAccount: account});
       blokUnion.deployed().then((instance) => {
         blokUnionInstance = instance;
       }).then((result) => {
@@ -178,6 +180,7 @@ class App extends Component {
           blokUnion is a decentralized credit union framework.  For now this is just an experiment by <a href="http://www.crusyn.com">@crusyn</a>.  At this time this will only work with a local version of the <a href="https://github.com/crusyn/blokUnion">blokUnion contract</a> running.
         </p>
         <div>
+        <label>Account: {this.state.currentAccount}</label><br/><br/>
         <h1>Balance</h1>
         <label>Balance: {this.state.balance} ETH</label><br/><br/>
         <label>Note: this is your confirmed balance.  You may have to wait a 10 seconds or so before your transactions confirm.</label>

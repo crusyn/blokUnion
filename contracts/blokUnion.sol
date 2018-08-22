@@ -6,6 +6,8 @@ pragma solidity ^0.4.13;
 contract blokUnion {
   ///STATE VARS
 
+  bool public contractOn = true;
+
   ///@notice demandAccounts are regular deposit accounts at blokUnion
   mapping (address => uint) private demandAccounts;
 
@@ -79,15 +81,34 @@ contract blokUnion {
       _;
     }
 
+  modifier contractIsOn(){
+    require(contractOn); _;
+  }
+
   ///CONSTRUCTOR
   constructor() public{
     owner = msg.sender;
   }
 
+  function turnOffContract() public onlyOwner{
+    contractOn = false;
+  }
+
+  function turnOnContract() public onlyOwner{
+    contractOn = true;
+  }
+
+  function kill() onlyOwner{
+    selfdestruct(owner);
+  }
+
   ///FUNCTIONS
   ///@notice deposit ether into the blokUnion
   ///@return the member's balance
-  function deposit() public payable returns(uint){
+  function deposit() public payable contractIsOn returns(uint){
+    //overflow protect
+    require(demandAccounts[msg.sender] + msg.value > demandAccounts[msg.sender]);
+
     demandAccounts[msg.sender] += msg.value;
 
     emit DemandDeposit(msg.sender, msg.value);
@@ -100,9 +121,12 @@ contract blokUnion {
   ///@notice withdraw ether from the blokUnion
   ///@param _withdrawAmount amount you want to withdraw
   ///@return the member's remaining balance
-  function withdraw(uint _withdrawAmount) public returns (uint){
+  function withdraw(uint _withdrawAmount) public contractIsOn returns (uint){
     //make sure there is enough money in the account
     require(demandAccounts[msg.sender] >= _withdrawAmount);
+
+    //underflow protection
+    require(demandAccounts[msg.sender] - _withdrawAmount < demandAccounts[msg.sender]);
 
     //remove the money from their balance
     demandAccounts[msg.sender] -= _withdrawAmount;
@@ -119,11 +143,11 @@ contract blokUnion {
 
   ///@notice get balance of your demand account
   ///@return the member's balance
-  function getDemandBalance() public view returns (uint){
+  function getDemandBalance() public view contractIsOn returns (uint){
     return demandAccounts[msg.sender];
   }
 
-  function requestLoan(uint _amount, string _purpose) public {
+  function requestLoan(uint _amount, string _purpose) public contractIsOn {
     //we only support one loan per account today, make sure the member is not
     //attempting to request a loan after one was already requested.
     require(loans[msg.sender].loanAmount == 0);
@@ -148,7 +172,7 @@ contract blokUnion {
   }
 
   //TODO: implement security: only a loan owner or approver can get loans
-  function getLoan(address _address) public view returns(
+  function getLoan(address _address) public contractIsOn view returns(
     address borrower,
     uint loanAmount,
     string purpose,
@@ -177,7 +201,7 @@ contract blokUnion {
   ///@notice elect someone that can approve loans, only the owner can elect an
   ///approver
   ///@param _approver address of the person to be elected
-  function electApprover(address _approver) public onlyOwner{
+  function electApprover(address _approver) public contractIsOn onlyOwner{
     loanApprovers[_approver] = true;
 
     emit ApproverElected(_approver);
@@ -191,6 +215,9 @@ contract blokUnion {
 
     //make sure totalOutstandingLoans is never be greater than one half of totalDeposits.
     require(totalOutstandingLoans + loan.loanAmount <= totalDeposits / 2);
+
+    //protect against overflow
+    require(demandAccounts[_borrower] + loan.loanAmount > demandAccounts[_borrower]);
 
     //update loan
     loan.status = LoanStatus.Issued;
