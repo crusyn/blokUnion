@@ -20,31 +20,36 @@ contract blokUnion {
   ///@notice loanApprovers are authorized to approve and decline loan requests.
   mapping (address => bool) private loanApprovers;
 
+  ///@notice this is the key struct, describes a loan, duh
   struct Loan {
     address borrower;
-    uint loanAmount;
-    string purpose; //TODO: can use ipfs later, borrower can upload html describing purpose.
-    LoanStatus status;
-    address approver;
-    uint balance;
-    uint issueDate;
-    uint maturityDate;
-    uint apr; //in parts per million
+    uint loanAmount; //Is zero until loan is requested
+    string purpose; //reason for requesting the loans
+    //TODO: can use ipfs later, borrower can upload html describing purpose.
+    LoanStatus status; //status of loan, see LoanStatus struct
+    address approver; //the address of the user that approved this loan
+    uint balance; //the principal + accrued interest - repayments or outstanding amount owed
+    uint issueDate; //when the loan was appoved/issued
+    uint maturityDate; //when the loan should be fully repaid by
+    uint apr; //interest rate in parts per million
 
   }
 
+  ///@notice this defines the overall workflow
   enum LoanStatus {
-    NoLoan,
-    Requested,
-    Issued,
-    Declined,
-    Repaid
+    NoLoan, //should never happen
+    Requested, //after requestLoan()
+    Issued, //after approveLoan()
+    Declined, //unimplemented
+    Repaid //unimplemented
   }
 
+  ///@notice this is the total deposits at a current time.  Due to the magic
+  ///or fractional reserve banking this can actually be > that the total ETH
+  ///in the contract.
   uint totalDeposits;
 
-  ///@notice totalOutstandingLoans should never be greater than one half of totalDeposits.
-  //TODO: this should be validated before issuing a loan.
+  ///@notice totalOutstandingLoans should never be greater than one half of totalDeposits
   uint totalOutstandingLoans;
 
   ///EVENTS
@@ -64,9 +69,6 @@ contract blokUnion {
   event LoanRepaid(address borrower);
 
   event ApproverElected(address approver);
-
-  //TODO remove
-  event DebugEvent(address add, address add2, uint a, uint b, bool bo, string c);
 
   ///MODIFIERS
 
@@ -90,14 +92,23 @@ contract blokUnion {
     owner = msg.sender;
   }
 
+  ///@notice trips circuit breaker, will turn off all functions in this contract
+  ///@dev only the contract owner can exec
+  //TODO: need to write tests for this
   function turnOffContract() public onlyOwner{
     contractOn = false;
   }
 
+  ///@notice releases circuit breaker, will turn off all functions in this contract
+  ///@dev only the contract owner can exec
+  //TODO: need to write tests for this
   function turnOnContract() public onlyOwner{
     contractOn = true;
   }
 
+  ///@notice closes the blokUnion and sends all ETH to owner
+  ///@dev only the contract owner can exec
+  //TODO: need to write tests for this
   function kill() onlyOwner{
     selfdestruct(owner);
   }
@@ -147,6 +158,12 @@ contract blokUnion {
     return demandAccounts[msg.sender];
   }
 
+  ///@notice use this function to request a loan.
+  ///@dev today we only support one loan per account.  This is the first step
+  ///in the lending workflow.
+  ///@param _amount Amount being requested
+  ///@param _purpose The reason for the loan, this will be used by approvers to
+  ///determine if the loan should be approved & issued
   function requestLoan(uint _amount, string _purpose) public contractIsOn {
     //we only support one loan per account today, make sure the member is not
     //attempting to request a loan after one was already requested.
@@ -171,6 +188,11 @@ contract blokUnion {
     emit LoanRequest(loans[msg.sender].borrower, loans[msg.sender].loanAmount, loans[msg.sender].purpose);
   }
 
+  ///@notice used to be able to examine loans
+  ///@dev relatively harmless, but we should make this accessible only by owners
+  ///and/or approvers
+  ///@param _address loan's borrower address
+  ///@return essentially everything in the loan struct
   //TODO: implement security: only a loan owner or approver can get loans
   function getLoan(address _address) public contractIsOn view returns(
     address borrower,
@@ -218,6 +240,8 @@ contract blokUnion {
 
     //protect against overflow
     require(demandAccounts[_borrower] + loan.loanAmount > demandAccounts[_borrower]);
+
+    require(loan.status == LoanStatus.Requested);
 
     //update loan
     loan.status = LoanStatus.Issued;
