@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = function(options, callback) {
+  console.log("starting custom build");
   const artifactsDir = options.contracts_build_directory;
   const outputDir = path.join(options.working_directory, "src/contracts/");
   //const outputIndexPath = path.join(outputDir, "index.js");
@@ -13,9 +14,11 @@ module.exports = function(options, callback) {
   }
 
 
-  files.forEach(fileName =>
-    fs.createReadStream(path.join(artifactsDir , file.fileName)).pipe(fs.createWriteStream(path.join(outputDir , file.fileName)))
-  );
+  files.forEach(fileName => {
+    const sourcePath = path.join(artifactsDir, fileName);
+    const destPath = path.join(outputDir, fileName);
+    fs.createReadStream(sourcePath).pipe(fs.createWriteStream(destPath));
+  });
 /**
   fs.writeFileSync(outputIndexPath, "module.exports = {\n");
 
