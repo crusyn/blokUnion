@@ -1,4 +1,18 @@
 pragma solidity ^0.4.13;
+/**
+Attempted adding a library
+library liquidityRules {
+  ///@notice totalOutstandingLoans should never be greater than one half of totalDeposits
+  ///@dev used to determine if a new loan is permitted
+  ///@param _totalDeposits total deposits in ETH at the union
+  ///@param _totalPrincipalOutstanding total principal outstanding at the union
+  ///@param _newLoanAmt proposed loan amount
+  ///@return true if it's ok to issue the loan
+  function isUnionLiquid(uint _totalDeposits, uint _totalPrincipalOutstanding, uint _newLoanAmt) pure public returns (bool){
+    return _totalPrincipalOutstanding + _newLoanAmt <= _totalDeposits / 2;
+  }
+}
+**/
 
 ///@title A "decentralized" (not really, not yet) credit union
 ///@author @crusyn - Chris Rusyniak
@@ -229,6 +243,16 @@ contract blokUnion {
     emit ApproverElected(_approver);
   }
 
+  ///@notice totalOutstandingLoans should never be greater than one half of totalDeposits
+  ///@dev used to determine if a new loan is permitted
+  ///@param _totalDeposits total deposits in ETH at the union
+  ///@param _totalPrincipalOutstanding total principal outstanding at the union
+  ///@param _newLoanAmt proposed loan amount
+  ///@return true if it's ok to issue the loan
+  function isUnionLiquid(uint _totalDeposits, uint _totalPrincipalOutstanding, uint _newLoanAmt) pure public returns (bool){
+    return _totalPrincipalOutstanding + _newLoanAmt <= _totalDeposits / 2;
+  }
+
   ///@notice approve a loan, only an approver can approve a loan.
   ///@param _borrower the borrower you wish to approve.
   ///@param _rate the rate you assign to the borrower for his/her loan.
@@ -236,7 +260,7 @@ contract blokUnion {
     Loan storage loan = loans[_borrower];
 
     //make sure totalOutstandingLoans is never be greater than one half of totalDeposits.
-    require(totalOutstandingLoans + loan.loanAmount <= totalDeposits / 2);
+    require(isUnionLiquid(totalDeposits, totalOutstandingLoans, loan.loanAmount));
 
     //protect against overflow
     require(demandAccounts[_borrower] + loan.loanAmount > demandAccounts[_borrower]);
