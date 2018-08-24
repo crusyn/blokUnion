@@ -28,19 +28,26 @@ truffle build
 truffle test
 ```
 
-5. stand up website
+5. reset blockchain
+
+```
+truffle migrate --reset
+truffle build
+```
+
+6. stand up website
 
 `npm start dev`
 
-6. open site
+7. open site
 
 `http://localhost:3000/`
 
-7. connect metamask
+8. connect metamask
 
 copy Mnemonic from ganache-cli and add to metamask to get use the test wallet
 
-8. play
+9. play
 
 -deposit ETH
 -wait for transaction to get validated
