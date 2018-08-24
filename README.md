@@ -1,4 +1,5 @@
 # blokUnion
+The makings of a decentralized credit union framework.  Group can start a credit union, make deposits in ETH and then elect approvers to issue loans against those funds.  The interest can then flow back to credit union members after paying approvers for doing a good job :).
 
 ## running it
 
