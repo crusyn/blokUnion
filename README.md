@@ -61,6 +61,32 @@ copy Mnemonic from ganache-cli and add to metamask to get use the test wallet
 
 ## testing it
 you can test blokUnion by running `truffle test` after deploying the contract
+be careful to reset the contract (and ideally restart ganache) after you test as to not impact your UI testing.
+
+### tests
+#### balance after deposit should be correct
+user attemptps to deposit 3 ETH, a deposit event is emitted, and the users balance in the union is 3 ETH greater after the deposit
+
+#### balance after Withdrawl should be correct
+user attempts to withdraw 1 ETH, a withdrawl event is emitted, balance is 1 ETH less than before the test
+
+#### should not be able to withdraw more than balance
+user attempts to withdraw more than their balance, the contract reverts, we use assertRevert to confirm this
+
+#### requested loan is accessible and status is requested
+user can request a loan, the properties of the loan are set correctly, the LoanRequest event is emitted and is properly formed, the status of the loan is "requested: 1"
+
+#### non-owner attempt to add an approver
+Attempt to add an approver as a non-owner.  This should fail, confirmed by assertRevert.
+
+#### loan can be approved and issued
+Valid approver attempts to issue a loan.  We check to make sure the loan status is "Issued: 2", the balance is updated to the request amount, and the apr is set to a rate.  The borrowers union account balance should be increased by the amount of the loan request.
+
+#### loan can only be approved by an approver
+A user that is not an approver attempts to approve the loan.  This should fail.
+
+#### cannot issue a loan more than total deposits
+An approver attempts to issue a loan that is more than one half of deposits in the union.  This should fail.
 
 ## design patterns
 ### circuit breaker
