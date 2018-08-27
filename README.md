@@ -12,6 +12,7 @@ run `./ganache-cli` on port 8545
 ```
 git clone git@github.com:crusyn/blokUnion.git
 cd blokUnion
+npm install
 ```
 
 3. run truffle scripts
